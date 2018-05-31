@@ -1,0 +1,7 @@
+43a44
+> sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+253c254,255
+<             f.write('%s    %d    %s    %s    %s    %0.4e    %0.4e\n'%(chrom, pos, sid, nt1, nt2, raw_beta, ldpred_beta))
+---
+>             # switch sign of final beta so that it's in terms of A1
+>             f.write('%s    %d    %s    %s    %s    %0.4e    %0.4e\n'%(chrom, pos, sid, nt1, nt2, raw_beta, -1*ldpred_beta))
