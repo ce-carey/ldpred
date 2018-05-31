@@ -32,7 +32,7 @@ In contrast to the [orignal code](https://github.com/bvilhjal/ldpred), I have fl
 
 1. Convert summary stats into the adapted LDpred BASIC format (see above) using [process-sumstats](https://github.com/ce-carey/process-sumstats).
 
-2-3. Run `coord_genotypes.py` and `LDpred_inf.py` together using the following script:
+2. Run `coord_genotypes.py` and `LDpred_inf.py` together using the following script. This script runs `coord_genotypes.py`, automatically calculates the radius parameter from the total number of SNPs in common between the reference file, sumstats file, and target file, and then runs `LDpred_inf.py`:
 ```
 reffile='/path/to/reference/genome'
 sumstats='/path/to/preformatted/sumstats'
@@ -47,9 +47,7 @@ radius=$((nsnps/3000))
 
 ./LDpred_inf.py --coord=$outname.coord --ld_radius=$radius --ld_prefix=$outname"_LD" --N=$sampsize --out=$outname"_LDPred"
 ```
-
-   This script runs `coord_genotypes.py`, automatically calculates the radius parameter from the total number of SNPs in common between the reference file, sumstats file, and target file, and then runs `LDpred_inf.py`. 
-
+   
 4. Score the target sample in a program such as [PLINK2](https://www.cog-genomics.org/plink2/) or [Hail](https://hail.is/) using the output of `LDpred_inf.py`.
 
 ___
