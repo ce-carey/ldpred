@@ -28,7 +28,7 @@ chrom_1 | 779322 | rs4040617 | G | A | 2.8595e-02 | 1.5704e-04
 
 In contrast to the [orignal code](https://github.com/bvilhjal/ldpred), I have flipped the sign of `ldpred_inf_beta` so that it's reported in terms of nt1 (A1 in the input). In the original code, `raw_beta` is reported in terms of nt1/A1, but `ldpred_inf_beta` is reported in terms of nt2/A2. I changed the latter to be consistent both with the `raw_beta` and the convention of various polygenic scoring software, which tend to assign weights to A1. 
 
-# Sample Workflow
+## Sample Workflow
 
 1. Convert summary stats into the adapted LDpred BASIC format (see above) using [process-sumstats](https://github.com/ce-carey/process-sumstats).
 
@@ -49,6 +49,16 @@ radius=$((nsnps/3000))
 ```
    
 3. Score the target sample in a program such as [PLINK2](https://www.cog-genomics.org/plink2/) or [Hail](https://hail.is/) using the output of `LDpred_inf.py`.
+
+## Tips, Tricks, and Gotcha's
+
+Running LDpred can be very computationally resource-intensive. Below are some tips for getting it running smoothly, with some specificity to the Broad cluster and UGER.
+
+*Typically I've used the [1000 Genomes](http://www.internationalgenome.org/) EUR subset as a reference genome. I've found that most GWAS summary statistics I use come from data imputed using 1KG. On the Broad cluster, provided you're a member of the ATGU group, you can access the latest version of the data (1KG Phase 3 version 5a), here: `/humgen/atgu1/fs03/shared_resources/1kG/integrated/20130502/`.
+
+*Filter your reference panel and target SNP list to only the [HM3](https://www.sanger.ac.uk/resources/downloads/human/hapmap3.html) SNPs. These are SNPs that are generally well imputed across arrays and representative across the genome. A list of HM3 SNPs can be found here on the Broad cluster, provided you're a member of the ATGU group: `/humgen/atgu1/fs03/shared_resources/ldsc_reference/w_hm3.snplist`. Otherwise you can generate your own list by downloading the above-linked files.
+
+*Using the HM3-filtered 1KG EUR reference panel and ~1 million SNPs in the sumstats and target files, I've been able to run both `coord_genotypes.py` and `LDpred_inf.py` using "only" 64GB RAM in under 2 hours. 
 
 ___
 
