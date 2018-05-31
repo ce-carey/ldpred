@@ -48,7 +48,7 @@ radius=$((nsnps/3000))
 ./LDpred_inf.py --coord=$outname.coord --ld_radius=$radius --ld_prefix=$outname"_LD" --N=$sampsize --out=$outname"_LDPred"
 ```
    
-4. Score the target sample in a program such as [PLINK2](https://www.cog-genomics.org/plink2/) or [Hail](https://hail.is/) using the output of `LDpred_inf.py`.
+3. Score the target sample in a program such as [PLINK2](https://www.cog-genomics.org/plink2/) or [Hail](https://hail.is/) using the output of `LDpred_inf.py`.
 
 ___
 
