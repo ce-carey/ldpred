@@ -1,3 +1,17 @@
+# Description of Edits
+
+I very lightly edited the original LDpred scripts for my own use, mainly to fix a few bugs (potentially will make future pull requests), force the BASIC input format to accept effect allele weights instead of OR's, save out a list of overlapping SNPs, auto-exclude the X chromosome from analyses, and output the final betas both in terms of A1. Line-by-line descriptions of changes can be found in DIFF_coord_genotypes.log and DIFF_LDpred_inf.log. I have not edited the main `LDpred.py` script--just the infinitesimal model. For information on how to use these scripts, please see the original README, reprinted below. 
+
+The style of the edited BASIC input format is as follows:
+
+CHR | SNP | A1 | A2 | BP | WEIGHT | P       
+--- | --- | --- | --- | --- | --- | ---
+chr1 | rs4951859 | C | G | 729679 | -0.02170 | 0.2083  
+chr1 | rs142557973 | T | C | 731718 | 0.01930 | 0.3298  
+
+NOTE: This is under active development and generally intended for my own use and the use of my collaborators. USE AT YOUR OWN PERIL!!
+___
+
 Copyright (C) 2015, Bjarni J. Vilhjalmsson (bjarni.vilhjalmsson@gmail.com)
 
 # LDpred #
