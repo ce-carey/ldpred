@@ -41,7 +41,7 @@ import os
 import gzip
 import itertools as it
 import LDpred 
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 def parse_parameters():
     """
@@ -251,12 +251,13 @@ def ldpred_inf_genomewide(data_file=None, ld_radius = None, ld_dict=None, out_fi
         f.write('chrom    pos    sid    nt1    nt2    raw_beta    ldpred_inf_beta\n')
         for chrom, pos, sid, nt, raw_beta, ldpred_beta in it.izip(chromosomes, positions, sids, nts, raw_effect_sizes, ldpred_effect_sizes):
             nt1,nt2 = nt[0],nt[1]
-            # switch sign of final beta so that it's in terms of A1
+	    # switch sign of final beta so that it's in terms of A1
             f.write('%s    %d    %s    %s    %s    %0.4e    %0.4e\n'%(chrom, pos, sid, nt1, nt2, raw_beta, -1*ldpred_beta))
 
 
 
 def main():
+    #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
     p_dict = parse_parameters()
 
     #Use the same LD file as LDpred

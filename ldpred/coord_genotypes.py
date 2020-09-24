@@ -66,6 +66,10 @@ import itertools as it
 import gzip
 import random
 import plinkfiles
+from tqdm import tqdm
+tqdm.monitor_interval = 0
+
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 ambig_nts = set([('A', 'T'), ('T', 'A'), ('G', 'C'), ('C', 'G')])
 # recode_dict = {'1':'A', '2':'C', '3':'G', '4':'T'}
@@ -77,7 +81,7 @@ lc_CAPs_dict = {'a':'A', 'c':'C', 'g':'G', 't':'T'}
 
 
 ok_chromosomes = ['%d' % (x) for x in range(1, 23)]
-ok_chromosomes.append('X')
+#ok_chromosomes.append('X')
 chromosomes_list = ['chrom_%s' % (chrom) for chrom in ok_chromosomes]
 # LDpred currently ignores the Y and MT chromosomes.
 
@@ -961,46 +965,53 @@ def parse_sum_stats_basic(filename=None,
 
 
     print 'Parsing the file: %s' % filename
+    num_lines = sum(1 for line in open(filename))
     with open(filename) as f:
         bad_chromosomes = set()
         print f.next()
-        for line in f:
-            l = (line.strip()).split()
-            chrom_str = l[0]
-            chrom = chrom_str[3:]
-            if not chrom in ok_chromosomes:
-                bad_chromosomes.add(chrom)
-                continue
-            pos = int(l[4])
-            sid = l[1]
-            if sid in valid_sids:
-                if not chrom in chrom_dict.keys():
-                    chrom_dict[chrom] = {'ps':[], 'log_odds':[], 'infos':[],
-                                         'betas':[], 'nts': [], 'sids': [],
-                                         'positions': []}
-                chrom_dict[chrom]['sids'].append(sid)
-                chrom_dict[chrom]['positions'].append(pos)
-                pval = float(l[6])
-                chrom_dict[chrom]['ps'].append(pval)
-                nt = [l[2], l[3]]
-                chrom_dict[chrom]['nts'].append(nt)                
-                odds_ratio = float(l[5])
-                assert odds_ratio > 0, 'The odds ratios appear to have negative values.  Please use an appropriate dataformat.'
-                raw_beta = sp.log(odds_ratio)
-                chrom_dict[chrom]['log_odds'].append(raw_beta)
-                beta = sp.sign(raw_beta) * stats.norm.ppf(pval / 2.0)
-                chrom_dict[chrom]['betas'].append(beta / sp.sqrt(n))
-     
-        if len(bad_chromosomes) > 0:
-            print 'Ignored chromosomes:', ','.join(list(bad_chromosomes))
-            print 'Please note that only data on chromosomes 1-23, and X is parsed.'
+        with tqdm(total=num_lines) as pbar:
+		for line in f:
+            		l = (line.strip()).split()
+            		chrom_str = l[0]
+            		chrom = chrom_str[3:]
+            		if not chrom in ok_chromosomes:
+                		bad_chromosomes.add(chrom)
+                		continue
+            		pos = int(l[4])
+            		sid = l[1]
+            		if sid in valid_sids:
+	    			#print sid
+                		if not chrom in chrom_dict.keys():
+                 	   		chrom_dict[chrom] = {'ps':[], 'log_odds':[], 'infos':[],
+                        	        	         'betas':[], 'nts': [], 'sids': [],
+                                	        	 'positions': []}
+                		chrom_dict[chrom]['sids'].append(sid)
+                		chrom_dict[chrom]['positions'].append(pos)
+                		pval = float(l[6])
+                		chrom_dict[chrom]['ps'].append(pval)
+                		nt = [l[2], l[3]]
+                		chrom_dict[chrom]['nts'].append(nt)                
+                		#odds_ratio = float(l[5])
+                		raw_beta = float(l[5])
+				#assert odds_ratio > 0, 'The odds ratios appear to have negative values.  Please use an appropriate dataformat.'
+                		#raw_beta = sp.log(odds_ratio)
+                		chrom_dict[chrom]['log_odds'].append(raw_beta)
+                		beta = sp.sign(raw_beta) * stats.norm.ppf(pval / 2.0)
+                		chrom_dict[chrom]['betas'].append(beta / sp.sqrt(n))
+     			pbar.update(1)
+
+        	if len(bad_chromosomes) > 0:
+            		print 'Ignored chromosomes:', ','.join(list(bad_chromosomes))
+            		print 'Please note that only data on chromosomes 1-23, and X is parsed.'
 
     print 'SS file loaded, now sorting and storing in HDF5 file.'
     assert not 'sum_stats' in hdf5_file.keys(), 'Something is wrong with HDF5 file?'
     ssg = hdf5_file.create_group('sum_stats')
     num_snps = 0
     for chrom in chrom_dict.keys():
-        print 'Parsed summary stats for %d SNPs on chromosome %d' % (len(chrom_dict[chrom]['positions']), chrom)
+ #       print len(chrom_dict[chrom])
+#	print chrom
+	print 'Parsed summary stats for %d SNPs on chromosome %s' % (len(chrom_dict[chrom]['positions']), chrom)
         sl = zip(chrom_dict[chrom]['positions'], chrom_dict[chrom]['sids'], chrom_dict[chrom]['nts'],
                  chrom_dict[chrom]['betas'], chrom_dict[chrom]['log_odds'], chrom_dict[chrom]['ps'])
         sl.sort()
@@ -1023,7 +1034,7 @@ def parse_sum_stats_basic(filename=None,
             sids.append(sid)
             positions.append(pos)
             log_odds.append(lo)
-        g = ssg.create_group('chrom_%d' % chrom)
+        g = ssg.create_group('chrom_%s' % chrom)
         g.create_dataset('ps', data=sp.array(ps))
         g.create_dataset('betas', data=betas)
         g.create_dataset('log_odds', data=log_odds)
@@ -1111,7 +1122,8 @@ def coordinate_genot_ss(genotype_file=None,
                         genetic_map_dir=None,
                         check_mafs=False,
                         min_maf=0.01,
-                        skip_coordination=False):
+                        skip_coordination=False,
+			outlist=None):
     """
     Assumes plink BED files.  Imputes missing genotypes.
     """
@@ -1124,6 +1136,10 @@ def coordinate_genot_ss(genotype_file=None,
     num_common_snps = 0
     corr_list = []
     rb_corr_list = []
+
+    print "coordinate_genot_ss"
+
+    final_snps = []
 
     if plinkf_dict['has_phenotype']:
         hdf5_file.create_dataset('y', data=plinkf_dict['phenotypes'])
@@ -1358,6 +1374,7 @@ def coordinate_genot_ss(genotype_file=None,
             risk_scores += prs
         rb_risk_scores += rb_prs
         num_common_snps += len(betas)
+	final_snps.extend(sids)
 
     if plinkf_dict['has_phenotype']:
         # Now calculate the prediction r^2
@@ -1366,6 +1383,13 @@ def coordinate_genot_ss(genotype_file=None,
         print 'PRS R2 prediction accuracy for the whole genome was %0.4f (corr=%0.4f)' % (corr ** 2, corr)
         print 'Log-odds (effects) PRS R2 prediction accuracy for the whole genome was %0.4f (corr=%0.4f)' % (rb_corr ** 2, rb_corr)
     print 'There were %d SNPs in common' % num_common_snps
+    
+    print 'Writing out snplist'
+
+    with open(outlist+".snplist","w") as outfile:
+	for snp in final_snps:
+		outfile.write(snp+'\n')
+
     print 'In all, %d SNPs were excluded due to nucleotide issues.' % tot_num_non_matching_nts
     print 'Done coordinating genotypes and summary statistics datasets.'
 
@@ -1381,6 +1405,7 @@ def coordinate_genotypes_ss_w_ld_ref(genotype_file=None,
                                     min_maf=0.01,
                                     skip_coordination=False):
 #   recode_dict = {1:'A', 2:'T', 3:'C', 4:'G'} #1K genomes recoding..
+    print "coordinate_genotypes_ss_w_ld_ref"
     print 'Coordinating things w genotype file: %s \nref. genot. file: %s' % (genotype_file, reference_genotype_file) 
     from plinkio import plinkfile
     plinkf = plinkfile.PlinkFile(genotype_file)
@@ -1759,7 +1784,7 @@ def main():
         print 'Output file (%s) already exists!  Delete, rename it, or use a different output file.' % (p_dict['out'])
         raise Exception('Output file already exists!')
         
-    h5f = h5py.File(p_dict['out'], 'w')
+    h5f = h5py.File(p_dict['out']+'.coord', 'w')
     if p_dict['ssf_format'] == 'STANDARD':
         parse_sum_stats_standard(filename=p_dict['ssf'], bimfile=bimfile, hdf5_file=h5f, n=p_dict['N'])
     elif p_dict['ssf_format'] == 'PGC':
@@ -1782,7 +1807,7 @@ def main():
     else:
         if p_dict['gf_format'] == 'PLINK':
             coordinate_genot_ss(genotype_file=p_dict['gf'], genetic_map_dir=p_dict['gmdir'], check_mafs=p_dict['check_mafs'],
-                                hdf5_file=h5f, min_maf=p_dict['maf'], skip_coordination=p_dict['skip_coordination'])
+                                hdf5_file=h5f, min_maf=p_dict['maf'], skip_coordination=p_dict['skip_coordination'],outlist=p_dict['out'])
         elif p_dict['gf_format'] == 'DECODE':
             if not p_dict['skip_coordination']:
                 raise Exception('This option requires you to skip coordination of nucleotides and some QC.  Please confirm with --skip_coordination flag.')
